@@ -71,6 +71,7 @@ class BaseAvatar:
         self.recording = False
         self._record_video_pipe = None
         self._record_audio_pipe = None
+        self._record_video_started = False
         self.width = self.height = 0
 
         self.custom_audiotype = 0 # 0: normal, 1: sinlence, >1: custom audio
@@ -219,7 +220,9 @@ class BaseAvatar:
             logger.info("notify:%s", eventpoint)
 
     def start_recording(self):
-        if self.recording:
+        if self.recording or self._record_video_started:
+            return
+        if self.width == 0 or self.height == 0:
             return
         command = ['ffmpeg',
                     '-y', '-an',
@@ -229,7 +232,7 @@ class BaseAvatar:
                     '-s', "{}x{}".format(self.width, self.height),
                     '-r', str(25),
                     '-i', '-',
-                    '-pix_fmt', 'yuv420p', 
+                    '-pix_fmt', 'yuv420p',
                     '-vcodec', "h264",
                     f'temp{self.opt.sessionid}.mp4']
         self._record_video_pipe = subprocess.Popen(command, shell=False, stdin=subprocess.PIPE)
@@ -245,11 +248,10 @@ class BaseAvatar:
         self._record_audio_pipe = subprocess.Popen(acommand, shell=False, stdin=subprocess.PIPE)
 
         self.recording = True
+        self._record_video_started = True
     
     def record_video_data(self, image):
-        if self.width == 0:
-            self.height, self.width, _ = image.shape
-        if self.recording:
+        if self.recording and self._record_video_pipe is not None:
             self._record_video_pipe.stdin.write(image.tostring())
 
     def record_audio_data(self, frame):
@@ -422,7 +424,13 @@ class BaseAvatar:
                     combine_frame = current_frame
 
             cv2.putText(combine_frame, "LiveTalking", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (128,128,128), 1)
-            
+
+            # Lazy start recording — wait until we have a valid frame with real dimensions
+            if not self._record_video_started and combine_frame.shape[0] > 0 and combine_frame.shape[1] > 0:
+                self.width = combine_frame.shape[1]
+                self.height = combine_frame.shape[0]
+                self.start_recording()
+
             # 使用统一输出接口推送视频帧
             self.output.push_video_frame(combine_frame)
             self.record_video_data(combine_frame)

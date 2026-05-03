@@ -11,15 +11,13 @@ def llm_response(message,avatar_session:'BaseAvatar',datainfo:dict={}):
         start = time.perf_counter()
         from openai import OpenAI
         client = OpenAI(
-            # 如果您没有配置环境变量，请在此处用您的API Key进行替换
-            api_key=os.getenv("DASHSCOPE_API_KEY"),
-            # 填写DashScope SDK的base_url
-            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+            api_key="sk-cp-zt-A5jNPNGSvcnb_07N36ck3h-so0m86IH8meOedRXSMkapeCgWulIMBY1R-CxXsJ-xLaNFKcwKkj1UrLB9n3svPZqcCJiKeo9Jg8CrqWTZ3xp01Macrr-w",
+            base_url="https://api.minimax.io/v1",
         )
         end = time.perf_counter()
         logger.info(f"llm Time init: {end-start}s,{message}")
         completion = client.chat.completions.create(
-            model="qwen-plus",
+            model="MiniMax-M2.7",
             messages=[{'role': 'system', 'content': '你是一个知识助手，尽量以简短、口语化的方式输出'},
                     {'role': 'user', 'content': message}],
             stream=True,

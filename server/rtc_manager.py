@@ -58,9 +58,24 @@ class RTCManager:
         avatar_session = session_manager.get_session(sessionid)
 
         # 创建 PeerConnection
-        ice_server = RTCIceServer(urls='stun:stun.freeswitch.org:3478')
+        # STUN + TURN servers cho RunPod/cloud deployment
+        ice_servers = [
+            RTCIceServer(urls="stun:stun.relay.metered.ca:80"),
+            RTCIceServer(urls="turn:global.relay.metered.ca:80",
+                         username="d87d2cfaf8175848527c1054",
+                         credential="FdbiLpE3dcUfZIM/"),
+            RTCIceServer(urls="turn:global.relay.metered.ca:80?transport=tcp",
+                         username="d87d2cfaf8175848527c1054",
+                         credential="FdbiLpE3dcUfZIM/"),
+            RTCIceServer(urls="turn:global.relay.metered.ca:443",
+                         username="d87d2cfaf8175848527c1054",
+                         credential="FdbiLpE3dcUfZIM/"),
+            RTCIceServer(urls="turns:global.relay.metered.ca:443?transport=tcp",
+                         username="d87d2cfaf8175848527c1054",
+                         credential="FdbiLpE3dcUfZIM/"),
+        ]
         pc = RTCPeerConnection(
-            configuration=RTCConfiguration(iceServers=[ice_server])
+            configuration=RTCConfiguration(iceServers=ice_servers)
         )
         self.pcs.add(pc)
 
